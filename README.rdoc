@@ -20,8 +20,8 @@ multi-mode.el:: http://www.loveshack.ukfsn.org/emacs/multi-mode.el
 == Example
 
 <tt>hatena-diary-super-pre-notation</tt> in the following code enables
-specific major mode for certain programming language between
-<tt>>|</tt><em>language</em><tt>|</tt> and
+specific major mode for certain programming language in the text
+between <tt>>|</tt><em>language</em><tt>|</tt> and
 <tt>||\<</tt>. <tt>text-mode</tt> specified to
 <tt>multi-mode-init</tt> is used for the rest of text in the buffer.
 
