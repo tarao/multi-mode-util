@@ -23,7 +23,7 @@ multi-mode.el:: http://www.loveshack.ukfsn.org/emacs/multi-mode.el
 specific major mode for certain programming language in the text
 between <tt>>|</tt><em>language</em><tt>|</tt> and
 <tt>||\<</tt>. <tt>text-mode</tt> specified to
-<tt>multi-mode-init</tt> is used for the rest of text in the buffer.
+<tt>multi-mode-init</tt> is used for the rest of the text in the buffer.
 
   (require 'multi-mode-util)
   (setq hatena-diary-super-pre-languages '(java javascript lisp ruby))
