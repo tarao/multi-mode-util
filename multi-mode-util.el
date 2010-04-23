@@ -31,6 +31,15 @@
       (setq multi-mode-alist (append multi-mode-alist `((,mode . ,finder))))
       (multi-install-mode mode finder))))
 
+;; Workaround for fontification
+(defun multi-fontify-current-chunk ()
+  (interactive)
+  (when (buffer-base-buffer)
+    (let ((val (multi-find-mode-at)))
+      (funcall font-lock-fontify-region-function
+               (nth 1 val) (nth 2 val) nil))))
+(add-hook 'multi-select-mode-hook 'multi-fontify-current-chunk)
+
 ;; Workaround to prevent inconsistency in viper states
 (defgroup multi-mode-util nil "Customization for multi-mode-util."
   :prefix "multi-mode-util-")
