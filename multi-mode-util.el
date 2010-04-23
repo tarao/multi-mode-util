@@ -47,15 +47,19 @@
 
 ;; Workaround for undo/redo
 ;; This is not multi-mode specific problem;
-;; undo/redo in indirect buffers seem to have bug
+;; undo/redo in indirect buffers seem to have the same problem
 (defadvice undo (around undo-in-base-buffer activate)
-  (if (buffer-base-buffer)
-      (with-current-buffer (buffer-base-buffer) ad-do-it)
-    ad-do-it))
+  (let (pos)
+    (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+      ad-do-it
+      (setq pos (point)))
+    (goto-char pos)))
 (defadvice redo (around redo-in-base-buffer activate)
-  (if (buffer-base-buffer)
-      (with-current-buffer (buffer-base-buffer) ad-do-it)
-    ad-do-it))
+  (let (pos)
+    (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+      ad-do-it
+      (setq pos (point)))
+    (goto-char pos)))
 
 ;; Workaround to prevent inconsistency in viper states
 (defgroup multi-mode-util nil "Customization for multi-mode-util."
