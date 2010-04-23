@@ -23,6 +23,11 @@
   (unless (and multi-mode-alist (local-variable-p 'multi-mode-alist))
     (set (make-local-variable 'multi-mode-alist)
          `((,(or base-mode major-mode) . nil))))
+  (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t)
+  (add-hook
+   'multi-indirect-buffer-hook
+   '(lambda ()
+      (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t)))
   (multi-mode-install-modes)
   (multi-viper-init))
 (defun multi-install-chunk-finder (start end mode)
