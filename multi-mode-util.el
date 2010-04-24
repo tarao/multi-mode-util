@@ -48,7 +48,7 @@
 ;; Workaround for undo/redo
 ;; This is not multi-mode specific problem;
 ;; undo/redo in indirect buffers seem to have the same problem
-(defun multi-defadvice-undo-indirect-buffer (func)
+(defun multi-defadvice-in-base-buffer (func)
   (eval `(defadvice ,func
            (around ,(intern (concat (symbol-name func) "-in-base-buffer"))
                    activate)
@@ -57,10 +57,10 @@
                ad-do-it
                (setq pos (point)))
              (goto-char pos)))))
-(multi-defadvice-undo-indirect-buffer 'undo)
-(multi-defadvice-undo-indirect-buffer 'redo)
-(multi-defadvice-undo-indirect-buffer 'undo-tree-undo)
-(multi-defadvice-undo-indirect-buffer 'undo-tree-redo)
+(multi-defadvice-in-base-buffer 'undo)
+(multi-defadvice-in-base-buffer 'redo)
+(multi-defadvice-in-base-buffer 'undo-tree-undo)
+(multi-defadvice-in-base-buffer 'undo-tree-redo)
 (defadvice undo-tree-visualize
   (around undo-tree-visualize-in-base-buffer activate)
   (with-current-buffer (or (buffer-base-buffer) (current-buffer)) ad-do-it))
