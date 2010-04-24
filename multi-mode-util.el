@@ -45,6 +45,11 @@
                (nth 1 val) (nth 2 val) nil))))
 (add-hook 'multi-select-mode-hook 'multi-fontify-current-chunk)
 
+;; Workaround for transient-mark-mode
+(defadvice multi-select-buffer
+  (around multi-disable-select-buffer-when-mark-active activate)
+  (unless (and (boundp 'mark-active) mark-active) ad-do-it))
+
 ;; Workaround for undo/redo
 ;; This is not multi-mode specific problem;
 ;; undo/redo in indirect buffers seem to have the same problem
@@ -106,10 +111,6 @@
         (unless (assoc hook multi-viper-hook-alist)
           (push (cons hook func) multi-viper-hook-alist))
         (add-hook hook func)))))
-(defadvice multi-select-buffer (around multi-viper-select-buffer activate)
-  (unless (and (boundp 'viper-current-state)
-               (eq viper-current-state 'visual-state))
-    ad-do-it))
 
 (provide 'multi-mode-util)
 ;;; multi-mode-util.el ends here
