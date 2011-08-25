@@ -1,5 +1,12 @@
 (require 'multi-mode)
 
+(defcustom multi-mode-util-inhibit-eval-during-redisplay nil
+  "Whether to set `inhibit-eval-during-redisplay' to t in the buffer.
+This suppresses `Error during redisplay: (args-out-of-rage ...)' message but
+`jit-lock-mode' won't work properly."
+  :type 'boolean
+  :group 'multi-mode-util)
+
 (defun multi-make-chunk-finder (start-pat end-pat mode)
   `(lambda (pos)
      (let ((start (point-min)) (end (point-max)))
@@ -23,11 +30,12 @@
   (unless (and multi-mode-alist (local-variable-p 'multi-mode-alist))
     (set (make-local-variable 'multi-mode-alist)
          `((,(or base-mode major-mode) . nil))))
-  (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t)
-  (add-hook
-   'multi-indirect-buffer-hook
-   '(lambda ()
-      (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t)))
+  (when multi-mode-util-inhibit-eval-during-redisplay
+    (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t)
+    (add-hook
+     'multi-indirect-buffer-hook
+     '(lambda ()
+        (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t))))
   (multi-mode-install-modes)
   (multi-viper-init))
 (defun multi-install-chunk-finder (start end mode)
@@ -40,9 +48,9 @@
 (defun multi-fontify-current-chunk ()
   (interactive)
   (when (buffer-base-buffer)
-    (let ((val (multi-find-mode-at)))
-      (funcall font-lock-fontify-region-function
-               (nth 1 val) (nth 2 val) nil))))
+      (let ((val (multi-find-mode-at)))
+        (funcall font-lock-fontify-region-function
+                 (nth 1 val) (nth 2 val) nil))))
 (add-hook 'multi-select-mode-hook 'multi-fontify-current-chunk)
 
 ;; Workaround for transient-mark-mode
