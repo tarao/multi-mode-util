@@ -44,24 +44,36 @@ This suppresses `Error during redisplay: (args-out-of-rage ...)' message but
       (setq multi-mode-alist (append multi-mode-alist `((,mode . ,finder))))
       (multi-install-mode mode finder))))
 
-;; Workaround for fontification
 (defun multi-fontify-current-chunk ()
+  "Workaround for fontification."
   (interactive)
   (when (buffer-base-buffer)
       (let ((val (multi-find-mode-at)))
-        (funcall font-lock-fontify-region-function
-                 (nth 1 val) (nth 2 val) nil))))
+        (if jit-lock-mode
+            (save-restriction
+              (narrow-to-region (nth 1 val) (nth 2 val))
+              (jit-lock-refontify))
+          (funcall font-lock-fontify-region-function
+                   (nth 1 val) (nth 2 val) nil)))))
 (add-hook 'multi-select-mode-hook 'multi-fontify-current-chunk)
 
-;; Workaround for transient-mark-mode
 (defadvice multi-select-buffer
   (around multi-disable-select-buffer-when-mark-active activate)
+  "Workaround for transient-mark-mode."
   (unless (and (boundp 'mark-active) mark-active) ad-do-it))
 
-;; Workaround for undo/redo
-;; This is not multi-mode specific problem;
-;; undo/redo in indirect buffers seem to have the same problem
+(defadvice restore-buffer-modified-p
+  (around restore-indirect-buffer-modified-p activate)
+  "Workaround for Emacs bug: `restore-buffer-modified-p' function does not
+respect indirect buffers."
+  (if (buffer-base-buffer)
+      (with-current-buffer (buffer-base-buffer) ad-do-it)
+    ad-do-it))
+
 (defun multi-defadvice-in-base-buffer (func)
+  "Workaround for undo/redo.
+This is not multi-mode specific problem; undo/redo in indirect buffers seem to
+have the same problem."
   (eval `(defadvice ,func
            (around ,(intern (concat (symbol-name func) "-in-base-buffer"))
                    activate)
