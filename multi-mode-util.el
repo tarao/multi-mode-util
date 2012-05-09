@@ -7,6 +7,29 @@ This suppresses `Error during redisplay: (args-out-of-rage ...)' message but
   :type 'boolean
   :group 'multi-mode-util)
 
+(defun multi-base-buffer-p ()
+  "Whether the current buffer is the base of indirect buffers."
+  (null (buffer-base-buffer)))
+
+(defun multi-indirect-buffer-p ()
+  "Whether the current buffer is an indirect buffer."
+  (not (null (buffer-base-buffer))))
+
+(defmacro multi-with-base-buffer (&rest body)
+  "Evaluate BODY in the base buffer."
+  `(with-current-buffer (or (buffer-base-buffer) (current-buffer)) ,@body))
+
+(defmacro multi-with-indirect-buffers (&rest body)
+  "Evaluate BODY in the indirect buffers."
+  `(dolist (elt multi-indirect-buffers-alist)
+     (with-current-buffer (cdr elt) ,@body)))
+
+(defmacro multi-with-every-buffer (&rest body)
+  "Evaluate BODY in all buffers."
+  `(progn
+     (multi-with-base-buffer ,@body)
+     (multi-with-indirect-buffers ,@body)))
+
 (defun multi-make-chunk-finder (start-pat end-pat mode)
   `(lambda (pos)
      (let ((start (point-min)) (end (point-max)))
@@ -26,16 +49,17 @@ This suppresses `Error during redisplay: (args-out-of-rage ...)' message but
                  (multi-make-list ',mode s e)
                nil)))))))
 (defun multi-mode-init (&optional base-mode)
- (interactive)
+  (interactive)
   (unless (and multi-mode-alist (local-variable-p 'multi-mode-alist))
     (set (make-local-variable 'multi-mode-alist)
          `((,(or base-mode major-mode) . nil))))
   (when multi-mode-util-inhibit-eval-during-redisplay
-    (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t)
+    (set (make-local-variable 'inhibit-eval-during-redisplay) t)
     (add-hook
      'multi-indirect-buffer-hook
      '(lambda ()
-        (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t))))
+        (set (make-local-variable 'inhibit-eval-during-redisplay) t))
+     nil t))
   (multi-mode-install-modes)
   (multi-viper-init)
   (multi-evil-init))
@@ -48,7 +72,7 @@ This suppresses `Error during redisplay: (args-out-of-rage ...)' message but
 (defun multi-fontify-current-chunk ()
   "Workaround for fontification."
   (interactive)
-  (when (buffer-base-buffer)
+  (when (multi-indirect-buffer-p)
       (let ((val (multi-find-mode-at)))
         (if jit-lock-mode
             (save-restriction
@@ -67,9 +91,7 @@ This suppresses `Error during redisplay: (args-out-of-rage ...)' message but
   (around restore-indirect-buffer-modified-p activate)
   "Workaround for Emacs bug: `restore-buffer-modified-p' function does not
 respect indirect buffers."
-  (if (buffer-base-buffer)
-      (with-current-buffer (buffer-base-buffer) ad-do-it)
-    ad-do-it))
+  (multi-with-base-buffer ad-do-it))
 
 (defun multi-defadvice-in-base-buffer (func)
   "Workaround for undo/redo.
@@ -79,9 +101,9 @@ have the same problem."
            (around ,(intern (concat (symbol-name func) "-in-base-buffer"))
                    activate)
            (let (pos)
-             (with-current-buffer (or (buffer-base-buffer) (current-buffer))
-               ad-do-it
-               (setq pos (point)))
+             (multi-with-base-buffer
+              ad-do-it
+              (setq pos (point)))
              (goto-char pos)))))
 (multi-defadvice-in-base-buffer 'undo)
 (multi-defadvice-in-base-buffer 'redo)
@@ -89,7 +111,7 @@ have the same problem."
 (multi-defadvice-in-base-buffer 'undo-tree-redo)
 (defadvice undo-tree-visualize
   (around undo-tree-visualize-in-base-buffer activate)
-  (with-current-buffer (or (buffer-base-buffer) (current-buffer)) ad-do-it))
+  (multi-with-base-buffer ad-do-it))
 
 (defgroup multi-mode-util nil "Customization for multi-mode-util."
   :prefix "multi-mode-util-")
@@ -112,27 +134,25 @@ have the same problem."
   (let* ((hook (intern (multi-viper-hook-name state)))
          (func (cdr (assoc hook multi-viper-hook-alist)))
          (st (multi-viper-state-name state)))
-    (remove-hook hook func)
+    (remove-hook hook func t)
     (funcall (intern (concat "viper-change-state-to-" st)))
-    (add-hook hook func)))
-(defun multi-viper-change-base-buffer-state (state)
-  (with-current-buffer (multi-base-buffer) (multi-viper-change-state state)))
-(defun multi-viper-change-indirect-buffers-state (state)
-  (dolist (elt multi-indirect-buffers-alist)
-    (with-current-buffer (cdr elt) (multi-viper-change-state state))))
+    (add-hook hook func nil t)))
 (defun multi-viper-init ()
   (when (and (boundp 'viper-mode) viper-mode)
+    (add-hook 'multi-indirect-buffer-hook
+              '(lambda ()
+                 (dolist (elt multi-viper-hook-alist)
+                   (add-hook (car elt) (cdr elt) nil t)))
+              nil t)
     (dolist (st multi-mode-util-preserved-viper-states)
       (let ((hook (intern (multi-viper-hook-name st)))
             (func
              `(lambda ()
                 (when multi-mode-alist
-                  (multi-viper-change-indirect-buffers-state ',st)
-                  (unless (buffer-base-buffer)
-                    (multi-viper-change-base-buffer-state ',st))))))
+                  (multi-with-every-buffer (multi-viper-change-state ',st))))))
         (unless (assoc hook multi-viper-hook-alist)
           (push (cons hook func) multi-viper-hook-alist))
-        (add-hook hook func)))))
+        (add-hook hook func nil t)))))
 
 ;; Workaround to prevent inconsistency in evil states
 (defcustom multi-mode-util-preserved-evil-states
@@ -151,35 +171,26 @@ have the same problem."
   (let* ((hook (intern (multi-evil-hook-name state)))
          (func (cdr (assoc hook multi-evil-hook-alist)))
          (st (multi-evil-state-name state)))
-    (remove-hook hook func)
+    (remove-hook hook func t)
     (funcall (intern st) 1)
-    (add-hook hook func)))
-(defun multi-evil-change-base-buffer-state (state)
-  (with-current-buffer (multi-base-buffer)
-    (multi-evil-change-state state)))
-(defun multi-evil-change-indirect-buffers-state (state)
-  (dolist (elt multi-indirect-buffers-alist)
-    (with-current-buffer (cdr elt) (multi-evil-change-state state))))
-(defun multi-evil-hook-func (state)
-  `(lambda ()
-     (when multi-mode-alist
-       (multi-evil-change-indirect-buffers-state ',state)
-       (unless (buffer-base-buffer)
-         (multi-evil-change-base-buffer-state ',state)))))
+    (add-hook hook func nil t)))
 (defun multi-evil-init ()
   (when (and (boundp 'evil-mode) evil-mode)
-    (add-hook 'multi-indirect-buffer-hook 'evil-initialize-state)
+    (add-hook 'multi-indirect-buffer-hook
+              '(lambda ()
+                 (evil-initialize-state)
+                 (dolist (elt multi-evil-hook-alist)
+                   (add-hook (car elt) (cdr elt) nil t)))
+              nil t)
     (dolist (st multi-mode-util-preserved-evil-states)
       (let ((hook (intern (multi-evil-hook-name st)))
             (func
              `(lambda ()
                 (when multi-mode-alist
-                  (multi-evil-change-indirect-buffers-state ',st)
-                  (unless (buffer-base-buffer)
-                    (multi-evil-change-base-buffer-state ',st))))))
+                  (multi-with-every-buffer (multi-evil-change-state ',st))))))
         (unless (assoc hook multi-evil-hook-alist)
           (push (cons hook func) multi-evil-hook-alist))
-        (add-hook hook func)))))
+        (add-hook hook func nil t)))))
 
 (provide 'multi-mode-util)
 ;;; multi-mode-util.el ends here
