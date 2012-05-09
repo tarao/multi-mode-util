@@ -37,7 +37,8 @@ This suppresses `Error during redisplay: (args-out-of-rage ...)' message but
      '(lambda ()
         (set (make-variable-buffer-local 'inhibit-eval-during-redisplay) t))))
   (multi-mode-install-modes)
-  (multi-viper-init))
+  (multi-viper-init)
+  (multi-evil-init))
 (defun multi-install-chunk-finder (start end mode)
   (unless (assoc mode multi-mode-alist)
     (let ((finder (multi-make-chunk-finder start end mode)))
@@ -90,9 +91,10 @@ have the same problem."
   (around undo-tree-visualize-in-base-buffer activate)
   (with-current-buffer (or (buffer-base-buffer) (current-buffer)) ad-do-it))
 
-;; Workaround to prevent inconsistency in viper states
 (defgroup multi-mode-util nil "Customization for multi-mode-util."
   :prefix "multi-mode-util-")
+
+;; Workaround to prevent inconsistency in viper states
 (defcustom multi-mode-util-preserved-viper-states
   '(vi-state insert-state emacs-state)
   "States of viper-mode preserved among multiple major modes."
@@ -130,6 +132,53 @@ have the same problem."
                     (multi-viper-change-base-buffer-state ',st))))))
         (unless (assoc hook multi-viper-hook-alist)
           (push (cons hook func) multi-viper-hook-alist))
+        (add-hook hook func)))))
+
+;; Workaround to prevent inconsistency in evil states
+(defcustom multi-mode-util-preserved-evil-states
+  '(normal insert emacs)
+  "States of evil-mode preserved among multiple major modes."
+  :type '(symbol)
+  :group 'multi-mode-util)
+(defvar multi-preserving-evil-states nil)
+(defvar multi-evil-hook-alist nil)
+(defun multi-evil-state-name (state)
+  (when (symbolp state) (setq state (symbol-name state)))
+  (concat "evil-" state "-state"))
+(defun multi-evil-hook-name (state)
+  (concat (multi-evil-state-name state) "-entry-hook"))
+(defun multi-evil-change-state (state)
+  (let* ((hook (intern (multi-evil-hook-name state)))
+         (func (cdr (assoc hook multi-evil-hook-alist)))
+         (st (multi-evil-state-name state)))
+    (remove-hook hook func)
+    (funcall (intern st) 1)
+    (add-hook hook func)))
+(defun multi-evil-change-base-buffer-state (state)
+  (with-current-buffer (multi-base-buffer)
+    (multi-evil-change-state state)))
+(defun multi-evil-change-indirect-buffers-state (state)
+  (dolist (elt multi-indirect-buffers-alist)
+    (with-current-buffer (cdr elt) (multi-evil-change-state state))))
+(defun multi-evil-hook-func (state)
+  `(lambda ()
+     (when multi-mode-alist
+       (multi-evil-change-indirect-buffers-state ',state)
+       (unless (buffer-base-buffer)
+         (multi-evil-change-base-buffer-state ',state)))))
+(defun multi-evil-init ()
+  (when (and (boundp 'evil-mode) evil-mode)
+    (add-hook 'multi-indirect-buffer-hook 'evil-initialize-state)
+    (dolist (st multi-mode-util-preserved-evil-states)
+      (let ((hook (intern (multi-evil-hook-name st)))
+            (func
+             `(lambda ()
+                (when multi-mode-alist
+                  (multi-evil-change-indirect-buffers-state ',st)
+                  (unless (buffer-base-buffer)
+                    (multi-evil-change-base-buffer-state ',st))))))
+        (unless (assoc hook multi-evil-hook-alist)
+          (push (cons hook func) multi-evil-hook-alist))
         (add-hook hook func)))))
 
 (provide 'multi-mode-util)
