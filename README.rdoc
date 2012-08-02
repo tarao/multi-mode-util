@@ -30,7 +30,7 @@ multi-mode.el:: http://www.loveshack.ukfsn.org/emacs/multi-mode.el
 == Example 1
 
 If you are editing HTML file with embedded Python code between
-<tt>\<?python</tt> and <tt>?\></tt>, then using the following settings
+<tt>\<?python</tt> and <tt>?></tt>, then using the following settings
 provides you <tt>html-mode</tt> in HTML code and <tt>python-mode</tt>
 in Python code.
 
