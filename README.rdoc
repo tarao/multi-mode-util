@@ -1,29 +1,56 @@
-= multi-mode-util.el
+= multi-mode-util
 
 == Usage
 
-Locate <tt>multi-mode-util.el</tt> somewhere in your load path.
+Locate <tt>multi-mode-util.el</tt>,
+<tt>multi-mode-util-common.el</tt>, <tt>multi-mode+viper.el</tt> and
+<tt>multi-mode+evil.el</tt> somewhere in your load path.
 
-Write following line in your <tt>.emacs</tt>.
+Write the following line in your <tt>.emacs</tt>.
 
   (require 'multi-mode-util)
 
 Then you will be able to use functions listed bellow.
 - <tt>multi-mode-init</tt>
 - <tt>multi-install-chunk-finder</tt>
-- <tt>multi-make-chunk-finder</tt>
+- <tt>multi-run-in-base-buffer</tt>
+- <tt>multi-base-buffer-p</tt>
+- <tt>multi-indirect-buffer-p</tt>
+
+This package fixes the following problems in the original <tt>multi-mode</tt>.
+- Undo/redo-ing is inconsistent in multiple modes.
+- Activating mark (especially with <tt>transient-mark-mode</tt>) accross the boundary between multiple modes does not work.
+- States of <tt>viper-mode</tt> get inconsistent in multiple modes.
+- States of <tt>evil-mode</tt> get inconsistent in multiple modes.
+- Highlighting with <tt>jit-lock-mode</tt> was not working. (See issue #1)
+- A lock file is produced even if the file is not modified. (See issue #1)
 
 == Requirement
 
 multi-mode.el:: http://www.loveshack.ukfsn.org/emacs/multi-mode.el
 
-== Example
+== Example 1
+
+If you are editing HTML file with embedded Python code between
+<tt>\<?python</tt> and <tt>?\></tt>, then using the following settings
+provides you <tt>html-mode</tt> in HTML code and <tt>python-mode</tt>
+in Python code.
+
+  (defun pytml-mode ()
+    "Treat the current buffer as a pytml buffer."
+    (interactive)
+    (html-mode)
+    (multi-install-chunk-finder
+     "<\\?python[\r\n\t ]" "[\r\n\t ]\\?>" 'python-mode))
+  (setq auto-mode-alist (cons '("\\.pytml$" . pytml-mode) auto-mode-alist))
+
+== Example 2
 
 <tt>hatena-diary-super-pre-notation</tt> in the following code enables
 specific major mode for certain programming language in the text
-between <tt>>|</tt><em>language</em><tt>|</tt> and
-<tt>||\<</tt>. <tt>text-mode</tt> specified to
-<tt>multi-mode-init</tt> is used for the rest of the text in the buffer.
+between <tt>>|language|</tt> and <tt>||\<</tt>.  <tt>text-mode</tt>
+specified to <tt>multi-mode-init</tt> is used for the rest of the text
+in the buffer.
 
   (require 'multi-mode-util)
   (setq hatena-diary-super-pre-languages '(java javascript lisp ruby))
@@ -34,3 +61,26 @@ between <tt>>|</tt><em>language</em><tt>|</tt> and
       (let ((str (symbol-name l)))
         (multi-install-chunk-finder (concat "^>|" str "|$") "^||<$"
                                     (intern (concat str "-mode"))))))
+
+== Functions
+
+=== multi-mode-init (&optional BASE-MODE)
+
+This function sets the base major mode <tt>BASE-MODE</tt> for the
+buffer.  It is equivalent to <tt>(multi-install-mode BASE-MODE nil
+t)</tt> and this is implicitly done by the first call of
+<tt>multi-install-mode</tt> for a non-base major mode.  So, (unlike in
+the older versions) you don't need to call this function explicitly.
+
+=== multi-install-chunk-finder (START-PAT END-PAT MODE)
+
+This function installs a non-base major mode <tt>MODE</tt>.  The major
+mode will be activated in portions of buffer between strings matching
+with <tt>START-PAT</tt> and <tt>END-PAT</tt> regular expressions.
+
+=== multi-run-in-base-buffer (FUNC &optional TRACK-POSITION)
+
+This function advises a function specified by symbol <tt>FUNC</tt>
+being called in the base major mode.  Unless <tt>TRACK-POSITION</tt>
+is <tt>t</tt>, the cursor position will be restored after the function
+call.
