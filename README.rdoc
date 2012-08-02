@@ -34,6 +34,7 @@ If you are editing HTML file with embedded Python code between
 provides you <tt>html-mode</tt> in HTML code and <tt>python-mode</tt>
 in Python code.
 
+  (require 'multi-mode-util)
   (defun pytml-mode ()
     "Treat the current buffer as a pytml buffer."
     (interactive)
