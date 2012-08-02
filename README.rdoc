@@ -17,7 +17,7 @@ Then you will be able to use functions listed bellow.
 
 This package fixes the following problems in the original <tt>multi-mode</tt>.
 - Undo/redo-ing is inconsistent in multiple modes.
-- Activating mark (especially with <tt>transient-mark-mode</tt>) accross the boundary between multiple modes does not work.
+- Activating mark (especially with <tt>transient-mark-mode</tt>) across the boundary between multiple modes does not work.
 - States of <tt>viper-mode</tt> get inconsistent in multiple modes.
 - States of <tt>evil-mode</tt> get inconsistent in multiple modes.
 - Highlighting with <tt>jit-lock-mode</tt> was not working. (See issue #1)
