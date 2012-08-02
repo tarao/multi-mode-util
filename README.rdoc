@@ -14,8 +14,6 @@ Then you will be able to use functions listed bellow.
 - <tt>multi-mode-init</tt>
 - <tt>multi-install-chunk-finder</tt>
 - <tt>multi-run-in-base-buffer</tt>
-- <tt>multi-base-buffer-p</tt>
-- <tt>multi-indirect-buffer-p</tt>
 
 This package fixes the following problems in the original <tt>multi-mode</tt>.
 - Undo/redo-ing is inconsistent in multiple modes.
