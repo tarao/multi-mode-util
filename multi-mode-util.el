@@ -85,17 +85,36 @@ message but `jit-lock-mode' won't work properly."
       (multi-install-mode mode finder))))
 
 (defun multi-fontify-current-chunk ()
-  "Workaround for fontification."
+  "Workaround for fontification: fontify current chunk.
+This is used to ensure fontifying on a newly selected indirect
+buffer."
   (interactive)
   (when (multi-indirect-buffer-p)
-      (let ((val (multi-find-mode-at)))
-        (if jit-lock-mode
-            (save-restriction
-              (narrow-to-region (nth 1 val) (nth 2 val))
-              (jit-lock-fontify-now))
-          (funcall font-lock-fontify-region-function
-                   (nth 1 val) (nth 2 val) nil)))))
+    (let* ((val (multi-find-mode-at))
+           (beg (nth 1 val)) (end (nth 2 val)))
+        (font-lock-fontify-region beg end))))
 (add-hook 'multi-select-mode-hook 'multi-fontify-current-chunk)
+
+(defadvice multi-map-over-chunks
+  (around ad-multi-no-recursive-fontification activate)
+  "Workaround for fontification: `multi-map-over-chunks'
+internally select indirect buffers."
+  (remove-hook 'multi-select-mode-hook 'multi-fontify-current-chunk)
+  ad-do-it
+  (add-hook 'multi-select-mode-hook 'multi-fontify-current-chunk))
+
+(defadvice font-lock-unfontify-region
+  (around ad-multi-narrowing-font-lock-unfontify-region (beg end) activate)
+  "Workaround for fontification: `font-lock-unfontify-region' can
+be called in an indirect buffer with the range larger than its
+chunk."
+  (if (multi-initialized-p)
+    (let* ((val (multi-find-mode-at))
+           (buf (cdr (assoc (car val) multi-indirect-buffers-alist))))
+      (setq beg (max beg (nth 1 val)))
+      (setq end (min end (nth 2 val)))
+      (when (and (eq buf (current-buffer)) (< beg end)) ad-do-it))
+    ad-do-it))
 
 (defadvice multi-select-buffer
   (around ad-multi-disable-select-buffer-when-mark-active activate)

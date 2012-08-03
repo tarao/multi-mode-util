@@ -19,7 +19,7 @@ This package fixes the following problems in the original <tt>multi-mode</tt>.
 - Activating mark (especially with <tt>transient-mark-mode</tt>) across the boundary between multiple modes does not work.
 - States of <tt>viper-mode</tt> get inconsistent in multiple modes.
 - States of <tt>evil-mode</tt> get inconsistent in multiple modes.
-- Highlighting with <tt>jit-lock-mode</tt> was not working. (See {issue #1}[https://github.com/tarao/multi-mode-util/issues/1])
+- Fontification by <tt>font-lock-mode</tt> does not work properly.
 - A lock file is produced even if the file is not modified. (See {issue #1}[https://github.com/tarao/multi-mode-util/issues/1])
 
 == Requirement
