@@ -1,4 +1,4 @@
-(require 'multi-mode-util-common)
+(require 'multi-mode-util)
 (require 'viper)
 
 (defcustom multi-mode-util-preserved-viper-states

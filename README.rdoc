@@ -2,8 +2,7 @@
 
 == Usage
 
-Locate <tt>multi-mode-util.el</tt>,
-<tt>multi-mode-util-common.el</tt>, <tt>multi-mode+viper.el</tt> and
+Locate <tt>multi-mode-util.el</tt>, <tt>multi-mode+viper.el</tt> and
 <tt>multi-mode+evil.el</tt> somewhere in your load path.
 
 Write the following line in your <tt>.emacs</tt>.

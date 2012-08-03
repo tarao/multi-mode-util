@@ -1,4 +1,4 @@
-(require 'multi-mode-util-common)
+(require 'multi-mode-util)
 (require 'evil)
 
 (defcustom multi-mode-util-preserved-evil-states
