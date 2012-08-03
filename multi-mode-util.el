@@ -26,7 +26,7 @@ message but `jit-lock-mode' won't work properly."
   "Evaluate BODY in the indirect buffers."
   (declare (indent 0))
   `(dolist (elt multi-indirect-buffers-alist)
-     (with-current-buffer (cdr elt) ,@body)))
+     (with-current-buffer (cdr elt) (when (multi-indirect-buffer-p) ,@body))))
 
 (defmacro multi-with-every-buffer (&rest body)
   "Evaluate BODY in all buffers."
