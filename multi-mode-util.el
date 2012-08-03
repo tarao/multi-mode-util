@@ -146,6 +146,15 @@ chunk."
 (multi-run-in-base-buffer 'undo-tree-redo t)
 (multi-run-in-base-buffer 'undo-tree-visualize)
 
+(defun multi-mode-quit ()
+  "Quit multi-mode."
+  (interactive)
+  (multi-with-base-buffer
+    (multi-with-indirect-buffers (let ((kill-buffer-hook nil)) (kill-buffer)))
+    (setq multi-mode-alist (list (pop multi-mode-alist)))
+    (setq multi-indirect-buffers-alist
+          (list (cons major-mode (current-buffer))))))
+
 ;; Workaround for viper
 (eval-after-load 'viper '(progn (require 'multi-mode+viper)))
 

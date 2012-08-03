@@ -11,6 +11,7 @@ Write the following line in your <tt>.emacs</tt>.
 
 Then you will be able to use functions listed bellow.
 - <tt>multi-mode-init</tt>
+- <tt>multi-mode-quit</tt>
 - <tt>multi-install-chunk-finder</tt>
 - <tt>multi-run-in-base-buffer</tt>
 
@@ -69,6 +70,11 @@ buffer.  It is equivalent to <tt>(multi-install-mode BASE-MODE nil
 t)</tt> and this is implicitly done by the first call of
 <tt>multi-install-mode</tt> for a non-base major mode.  So, (unlike in
 the older versions) you don't need to call this function explicitly.
+
+=== multi-mode-quit ()
+
+Quit <tt>multi-mode</tt>.  All indirect buffers for non-base major
+modes are killed.
 
 === multi-install-chunk-finder (START-PAT END-PAT MODE)
 
