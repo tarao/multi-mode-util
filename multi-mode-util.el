@@ -116,6 +116,17 @@ chunk."
       (when (and (eq buf (current-buffer)) (< beg end)) ad-do-it))
     ad-do-it))
 
+(defadvice multi-fontify
+  (around ad-multi-narrowing-multi-fontify-start (start) activate)
+  "Workaround for fontification: `multi-fontify' can be called in
+an indirect buffer with START out of chunk."
+  (when (multi-initialized-p)
+    (let* ((val (multi-find-mode-at))
+           (buf (cdr (assoc (car val) multi-indirect-buffers-alist)))
+           (beg (nth 1 val)) (end (nth 2 val)))
+      (when (eq buf (current-buffer)) (setq start (min (max start beg)) end))))
+  ad-do-it)
+
 (defadvice multi-select-buffer
   (around ad-multi-disable-select-buffer-when-mark-active activate)
   "Workaround for transient-mark-mode."
