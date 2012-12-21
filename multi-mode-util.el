@@ -166,11 +166,5 @@ an indirect buffer with START out of chunk."
     (setq multi-indirect-buffers-alist
           (list (cons major-mode (current-buffer))))))
 
-;; Workaround for viper
-(eval-after-load 'viper '(progn (require 'multi-mode+viper)))
-
-;; Workaround for evil
-(eval-after-load 'evil '(progn (require 'multi-mode+evil)))
-
 (provide 'multi-mode-util)
 ;;; multi-mode-util.el ends here
