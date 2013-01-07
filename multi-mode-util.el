@@ -17,17 +17,20 @@ message but `jit-lock-mode' won't work properly."
   (and (boundp 'multi-indirect-buffers-alist)
        (consp multi-indirect-buffers-alist)))
 
+;;;###autoload
 (defmacro multi-with-base-buffer (&rest body)
   "Evaluate BODY in the base buffer."
   (declare (indent 0))
   `(with-current-buffer (or (buffer-base-buffer) (current-buffer)) ,@body))
 
+;;;###autoload
 (defmacro multi-with-indirect-buffers (&rest body)
   "Evaluate BODY in the indirect buffers."
   (declare (indent 0))
   `(dolist (elt multi-indirect-buffers-alist)
      (with-current-buffer (cdr elt) (when (multi-indirect-buffer-p) ,@body))))
 
+;;;###autoload
 (defmacro multi-with-every-buffer (&rest body)
   "Evaluate BODY in all buffers."
   (declare (indent 0))
@@ -38,6 +41,7 @@ message but `jit-lock-mode' won't work properly."
 (defun multi-mode-util-inhibit-eval-during-redisplay ()
   (set (make-local-variable 'inhibit-eval-during-redisplay) t))
 
+;;;###autoload
 (defun multi-mode-init (&optional base-mode)
   "Initialize multi-mode with BASE-MODE activated in the base buffer."
   (interactive)
@@ -78,6 +82,7 @@ message but `jit-lock-mode' won't work properly."
                  (multi-make-list ',mode s e)
                nil)))))))
 
+;;;###autoload
 (defun multi-install-chunk-finder (start end mode)
   (unless (assoc mode multi-mode-alist)
     (let ((finder (multi-make-chunk-finder start end mode)))
@@ -139,6 +144,7 @@ an indirect buffer with START out of chunk."
   (when buffer-file-truename
     ad-do-it))
 
+;;;###autoload
 (defun multi-run-in-base-buffer (func &optional track-position)
   "Make FUNC to be run in the base buffer."
   (let ((ad-sym (intern (concat "ad-" (symbol-name func) "-in-base-buffer")))
