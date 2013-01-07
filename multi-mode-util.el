@@ -132,6 +132,13 @@ an indirect buffer with START out of chunk."
   "Workaround for transient-mark-mode."
   (unless (and (boundp 'mark-active) mark-active) ad-do-it))
 
+(defadvice vc-find-file-hook (around check-buffer-file-truename activate)
+  "Workaround for preventing VC mode from failing when
+`buffer-file-name' is set but `buffer-file-truename' is not set."
+  (when vc-mode (setq vc-mode nil))
+  (when buffer-file-truename
+    ad-do-it))
+
 (defun multi-run-in-base-buffer (func &optional track-position)
   "Make FUNC to be run in the base buffer."
   (let ((ad-sym (intern (concat "ad-" (symbol-name func) "-in-base-buffer")))
