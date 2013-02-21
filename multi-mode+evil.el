@@ -26,12 +26,15 @@
   (let ((state-fun (multi-evil-state-fun state))
         (hook (multi-evil-state-hook state))
         (hook-fun (multi-evil-state-hook-fun state)))
-    (eval `(defun ,hook-fun ()
-             (when multi-mode-alist
-               (multi-with-every-buffer
+    (eval
+     `(defun ,hook-fun ()
+        (let ((buffer (current-buffer)))
+          (when multi-mode-alist
+            (multi-with-every-buffer
+              (unless (eq buffer (current-buffer))
                 (remove-hook ',hook ',hook-fun t)
                 (,state-fun 1)
-                (add-hook ',hook ',hook-fun nil t)))))))
+                (add-hook ',hook ',hook-fun nil t)))))))))
 
 (defun multi-evil-install-hook ()
   (when (multi-indirect-buffer-p)
